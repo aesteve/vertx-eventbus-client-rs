@@ -7,9 +7,7 @@ use crate::listener::EventBusListener;
 use crate::publisher::EventBusPublisher;
 use std::net::{TcpStream, ToSocketAddrs};
 
-pub fn eventbus<A: ToSocketAddrs + Send + Sync>(
-    address: A,
-) -> io::Result<(EventBusPublisher, EventBusListener)> {
+pub fn eventbus<A: ToSocketAddrs>(address: A) -> io::Result<(EventBusPublisher, EventBusListener)> {
     TcpStream::connect(&address).map(|socket| {
         socket.set_nonblocking(true).unwrap();
         let notif_socket =
