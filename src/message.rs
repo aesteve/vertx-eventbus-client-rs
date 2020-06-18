@@ -2,6 +2,19 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
+pub trait MessageHandler
+where
+    Self: Send + Sync + 'static,
+{
+    fn handle(&self, msg: Message);
+}
+
+impl MessageHandler for &'static (dyn Fn(Message) + Send + Sync) {
+    fn handle(&self, msg: Message) {
+        self(msg);
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 #[serde(tag = "type")]
