@@ -1,17 +1,17 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::mpsc::Receiver;
 
-pub trait MessageHandler
-where
-    Self: Send + Sync + 'static,
-{
-    fn handle(&self, msg: Message);
+pub struct MessageConsumer {
+    pub(crate) msg_queue: Receiver<Message>,
 }
 
-impl MessageHandler for &'static (dyn Fn(Message) + Send + Sync) {
-    fn handle(&self, msg: Message) {
-        self(msg);
+impl Iterator for MessageConsumer {
+    type Item = Message;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.msg_queue.recv().ok()
     }
 }
 

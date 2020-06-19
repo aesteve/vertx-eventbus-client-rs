@@ -1,12 +1,14 @@
-use crate::message::{Message, MessageHandler, RegisterMessage};
+use crate::message::{Message, MessageConsumer, RegisterMessage};
 use crate::utils::write_msg;
 use buffered_reader::BufferedReader;
 use std::collections::HashMap;
 use std::net::TcpStream;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::{io, thread};
 
-type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Box<dyn MessageHandler>>>>;
+type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Sender<Message>>>>;
 
 pub struct EventBusListener {
     socket: TcpStream,
@@ -29,23 +31,18 @@ impl EventBusListener {
         listener
     }
 
-    pub fn register_consumer<C: ?Sized>(
-        &mut self,
-        address: String,
-        callback: &'static C,
-    ) -> io::Result<&mut Self>
-    where
-        &'static C: MessageHandler,
-    {
+    pub fn consumer(&mut self, address: String) -> io::Result<MessageConsumer> {
+        let (tx, rx) = channel::<Message>();
+        let handler = MessageConsumer { msg_queue: rx };
         self.handlers
             .lock()
             .expect("Could not add the callback to the list of consumers")
-            .insert(address.clone(), Box::new(callback));
+            .insert(address.clone(), tx);
         write_msg(
             &self.socket,
             &Message::Register(RegisterMessage { address }),
-        )
-        .map(|_| self)
+        )?;
+        Ok(handler)
     }
 
     pub fn unregister_consumer(&mut self, address: String) -> io::Result<&mut Self> {
@@ -78,7 +75,9 @@ fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
                                 .expect("Could not retrieve message handler for this address")
                                 .get(address.as_str())
                             {
-                                handler.handle(msg)
+                                handler
+                                    .send(msg)
+                                    .expect("Could not notify a new message has been received");
                             }
                         }
                     }
