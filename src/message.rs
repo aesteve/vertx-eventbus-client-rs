@@ -11,7 +11,7 @@ impl Iterator for MessageConsumer {
     type Item = Message;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.msg_queue.recv().ok()
+        self.msg_queue.try_recv().ok()
     }
 }
 
@@ -61,6 +61,7 @@ pub struct ErrorMessage {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct SendMessage {
     pub(crate) address: String,
     #[serde(skip_serializing_if = "Option::is_none")]
