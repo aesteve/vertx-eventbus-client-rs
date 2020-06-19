@@ -8,20 +8,16 @@ use crate::publisher::EventBusPublisher;
 use std::net::{TcpStream, ToSocketAddrs};
 
 pub fn eventbus<A: ToSocketAddrs>(address: A) -> io::Result<(EventBusPublisher, EventBusListener)> {
-    TcpStream::connect(&address).map(|socket| {
-        socket.set_nonblocking(true).unwrap();
-        let notif_socket =
-            socket // used to send control messages (ping/pong ; register / unregister)
-                .try_clone() // see: https://github.com/rust-lang/rust/issues/11165
-                .expect("Could not clone TCP connection to send control frames");
-        let write_stream = socket // used by the API user to publish / send outgoing messages
-            .try_clone() // see: https://github.com/rust-lang/rust/issues/11165
-            .expect("Could not clone TCP connection to send messages");
-        (
-            EventBusPublisher::new(write_stream),
-            EventBusListener::new(notif_socket),
-        )
-    })
+    let socket = TcpStream::connect(&address)?;
+    socket.set_nonblocking(true)?;
+    let notif_socket = socket // used to send control messages (ping/pong ; register / unregister)
+        .try_clone()?; // see: https://github.com/rust-lang/rust/issues/11165
+    let write_stream = socket // used by the API user to publish / send outgoing messages
+        .try_clone()?; // see: https://github.com/rust-lang/rust/issues/11165
+    Ok((
+        EventBusPublisher::new(write_stream),
+        EventBusListener::new(notif_socket),
+    ))
 }
 
 #[cfg(test)]
