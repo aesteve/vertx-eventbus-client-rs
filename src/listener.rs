@@ -1,12 +1,14 @@
-use crate::message::{Message, MessageHandler, RegisterMessage};
+use crate::message::{Message, MessageConsumer, RegisterMessage};
 use crate::utils::write_msg;
 use buffered_reader::BufferedReader;
 use std::collections::HashMap;
 use std::net::TcpStream;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::{io, thread};
 
-type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Box<Arc<Mutex<Vec<Message>>>>>>>;
+type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Sender<Message>>>>;
 
 pub struct EventBusListener {
     socket: TcpStream,
@@ -29,18 +31,13 @@ impl EventBusListener {
         listener
     }
 
-    pub fn register_consumer(&mut self, address: String) -> io::Result<MessageHandler> {
-        let msg_buffer = Arc::new(Mutex::new(Vec::new()));
-        let user_side_buffer = msg_buffer.clone();
-        let tcp_side_buffer = msg_buffer;
-        let handler = MessageHandler {
-            pending_msgs: Box::new(user_side_buffer),
-        };
-        let internal_handler = Box::new(tcp_side_buffer);
+    pub fn consumer(&mut self, address: String) -> io::Result<MessageConsumer> {
+        let (tx, rx) = channel::<Message>();
+        let handler = MessageConsumer { pending_msgs: rx };
         self.handlers
             .lock()
             .expect("Could not add the callback to the list of consumers")
-            .insert(address.clone(), internal_handler);
+            .insert(address.clone(), tx);
         write_msg(
             &self.socket,
             &Message::Register(RegisterMessage { address }),
@@ -79,9 +76,8 @@ fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
                                 .get(address.as_str())
                             {
                                 handler
-                                    .lock()
-                                    .expect("Could not push new message to message queue")
-                                    .push(msg)
+                                    .send(msg)
+                                    .expect("Could not notify a new message has been received");
                             }
                         }
                     }

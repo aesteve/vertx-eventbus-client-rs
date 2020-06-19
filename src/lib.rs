@@ -37,9 +37,7 @@ mod tests {
         let (mut publisher, mut listener) = eventbus("127.0.0.1:7542").unwrap();
         publisher.ping().unwrap();
         publisher.ping().unwrap();
-        let mut consumer = listener
-            .register_consumer("out-address".to_string())
-            .unwrap();
+        let mut consumer = listener.consumer("out-address".to_string()).unwrap();
         publisher
             .send(SendMessage {
                 address: "echo-address".to_string(),
