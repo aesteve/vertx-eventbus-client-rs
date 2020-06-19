@@ -23,14 +23,11 @@ pub fn eventbus<A: ToSocketAddrs>(address: A) -> io::Result<(EventBusPublisher, 
 #[cfg(test)]
 mod tests {
     use crate::eventbus;
-    use crate::message::{Message, SendMessage};
+    use crate::message::SendMessage;
     use serde_json::json;
 
-    fn print_msg(msg: Message) {
-        println!("From user code, message is: {:?}", msg);
-    }
-
-    /// These are integration test (should be moved to another cfg?) to avoid the "observator bias" (testing our understanding of the procotol, rather than the real protocol)
+    /// These are integration test (should be moved to another cfg?)
+    ///     to avoid the "observator bias" (testing our understanding of the protocol, rather than the real protocol)
     /// For them to work fine, one must first run ` java -jar testutils/vertx-eventbusbridge-test-1.0-SNAPSHOT-all.jar`
     #[test]
     fn can_create_the_bridge() {
@@ -49,7 +46,7 @@ mod tests {
         let mut received_msgs = 0;
         while received_msgs < 3 {
             if let Some(msg) = consumer.next() {
-                print_msg(msg);
+                println!("From user code, message is: {:?}", msg);
                 received_msgs += 1;
             }
         }
