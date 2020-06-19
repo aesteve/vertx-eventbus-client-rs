@@ -1,17 +1,21 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
-pub trait MessageHandler
-where
-    Self: Send + Sync + 'static,
-{
-    fn handle(&self, msg: Message);
+pub struct MessageHandler {
+    pub(crate) pending_msgs: Box<Arc<Mutex<Vec<Message>>>>,
 }
 
-impl MessageHandler for &'static (dyn Fn(Message) + Send + Sync) {
-    fn handle(&self, msg: Message) {
-        self(msg);
+impl Iterator for MessageHandler {
+    type Item = Message;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut msgs = self
+            .pending_msgs
+            .lock()
+            .expect("Could not acquire mutex to read messages");
+        msgs.pop()
     }
 }
 

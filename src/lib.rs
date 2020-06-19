@@ -25,8 +25,6 @@ mod tests {
     use crate::eventbus;
     use crate::message::{Message, SendMessage};
     use serde_json::json;
-    use std::thread;
-    use std::time::Duration;
 
     fn print_msg(msg: Message) {
         println!("From user code, message is: {:?}", msg);
@@ -39,8 +37,8 @@ mod tests {
         let (mut publisher, mut listener) = eventbus("127.0.0.1:7542").unwrap();
         publisher.ping().unwrap();
         publisher.ping().unwrap();
-        listener
-            .register_consumer("out-address".to_string(), &print_msg)
+        let mut consumer = listener
+            .register_consumer("out-address".to_string())
             .unwrap();
         publisher
             .send(SendMessage {
@@ -50,6 +48,12 @@ mod tests {
                 headers: None,
             })
             .unwrap();
-        thread::sleep(Duration::from_secs(5));
+        let mut received_msgs = 0;
+        while received_msgs < 3 {
+            if let Some(msg) = consumer.next() {
+                print_msg(msg);
+                received_msgs += 1;
+            }
+        }
     }
 }

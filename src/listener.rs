@@ -6,7 +6,7 @@ use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::{io, thread};
 
-type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Box<dyn MessageHandler>>>>;
+type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Box<Arc<Mutex<Vec<Message>>>>>>>;
 
 pub struct EventBusListener {
     socket: TcpStream,
@@ -29,23 +29,23 @@ impl EventBusListener {
         listener
     }
 
-    pub fn register_consumer<C: ?Sized>(
-        &mut self,
-        address: String,
-        callback: &'static C,
-    ) -> io::Result<&mut Self>
-    where
-        &'static C: MessageHandler,
-    {
+    pub fn register_consumer(&mut self, address: String) -> io::Result<MessageHandler> {
+        let msg_buffer = Arc::new(Mutex::new(Vec::new()));
+        let user_side_buffer = msg_buffer.clone();
+        let tcp_side_buffer = msg_buffer;
+        let handler = MessageHandler {
+            pending_msgs: Box::new(user_side_buffer),
+        };
+        let internal_handler = Box::new(tcp_side_buffer);
         self.handlers
             .lock()
             .expect("Could not add the callback to the list of consumers")
-            .insert(address.clone(), Box::new(callback));
+            .insert(address.clone(), internal_handler);
         write_msg(
             &self.socket,
             &Message::Register(RegisterMessage { address }),
-        )
-        .map(|_| self)
+        )?;
+        Ok(handler)
     }
 
     pub fn unregister_consumer(&mut self, address: String) -> io::Result<&mut Self> {
@@ -78,7 +78,10 @@ fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
                                 .expect("Could not retrieve message handler for this address")
                                 .get(address.as_str())
                             {
-                                handler.handle(msg)
+                                handler
+                                    .lock()
+                                    .expect("Could not push new message to message queue")
+                                    .push(msg)
                             }
                         }
                     }
