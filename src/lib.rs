@@ -30,7 +30,7 @@ mod tests {
     ///     to avoid the "observator bias" (testing our understanding of the protocol, rather than the real protocol)
     /// For them to work fine, one must first run ` java -jar testutils/vertx-eventbusbridge-test-1.0-SNAPSHOT-all.jar`
     #[test]
-    fn can_create_the_bridge() {
+    fn bridge_integration() {
         let (mut publisher, mut listener) = eventbus("127.0.0.1:7542").unwrap();
         publisher.ping().unwrap();
         publisher.ping().unwrap();
