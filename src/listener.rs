@@ -67,7 +67,6 @@ fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
             if let Ok(read) = socket.data_consume(len as usize) {
                 // event bus protocol is JSON encoded
                 let json = std::str::from_utf8(&read[..len as usize]).unwrap();
-                println!("JSON received {}", json);
                 match serde_json::from_str::<Message>(&json) {
                     Ok(msg) => {
                         if let Some(address) = msg.address() {
