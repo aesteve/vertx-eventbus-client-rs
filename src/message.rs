@@ -4,14 +4,14 @@ use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 
 pub struct MessageConsumer {
-    pub(crate) pending_msgs: Receiver<Message>,
+    pub(crate) msg_queue: Receiver<Message>,
 }
 
 impl Iterator for MessageConsumer {
     type Item = Message;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.pending_msgs.recv().ok()
+        self.msg_queue.recv().ok()
     }
 }
 

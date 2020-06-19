@@ -10,13 +10,13 @@ use std::net::{TcpStream, ToSocketAddrs};
 pub fn eventbus<A: ToSocketAddrs>(address: A) -> io::Result<(EventBusPublisher, EventBusListener)> {
     let socket = TcpStream::connect(&address)?;
     socket.set_nonblocking(true)?;
-    let notif_socket = socket // used to send control messages (ping/pong ; register / unregister)
+    let control_socket = socket // used to send control messages (ping/pong ; register / unregister)
         .try_clone()?; // see: https://github.com/rust-lang/rust/issues/11165
-    let write_stream = socket // used by the API user to publish / send outgoing messages
+    let w_socket = socket // used by the API user to publish / send outgoing messages
         .try_clone()?; // see: https://github.com/rust-lang/rust/issues/11165
     Ok((
-        EventBusPublisher::new(write_stream),
-        EventBusListener::new(notif_socket),
+        EventBusPublisher::new(w_socket),
+        EventBusListener::new(control_socket),
     ))
 }
 

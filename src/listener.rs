@@ -33,7 +33,7 @@ impl EventBusListener {
 
     pub fn consumer(&mut self, address: String) -> io::Result<MessageConsumer> {
         let (tx, rx) = channel::<Message>();
-        let handler = MessageConsumer { pending_msgs: rx };
+        let handler = MessageConsumer { msg_queue: rx };
         self.handlers
             .lock()
             .expect("Could not add the callback to the list of consumers")
