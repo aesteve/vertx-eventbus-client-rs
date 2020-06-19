@@ -83,7 +83,8 @@ mod tests {
     use serde_json::json;
 
     const JSON_PING: &str = r#"{"type":"ping"}"#;
-    const JSON_SEND: &str = r#"{"type":"send","address":"the-address","body":{}}"#;
+    const JSON_SEND: &str =
+        r#"{"type":"send","address":"the-address","replyAddress":"the-reply-address","body":{}}"#;
 
     #[test]
     fn unmarshall_messages() {
@@ -94,7 +95,7 @@ mod tests {
                 SendMessage {
                     address: "the-address".to_string(),
                     body: Some(json!({})),
-                    reply_address: None,
+                    reply_address: Some("the-reply-address".to_string()),
                     headers: None
                 },
                 msg
@@ -111,7 +112,7 @@ mod tests {
         let msg: String = serde_json::to_string(&Message::Send(SendMessage {
             address: "the-address".to_string(),
             body: Some(json!({})),
-            reply_address: None,
+            reply_address: Some("the-reply-address".to_string()),
             headers: None,
         }))
         .unwrap();
