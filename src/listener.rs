@@ -1,4 +1,4 @@
-use crate::message::{Message, MessageConsumer, RegisterMessage};
+use crate::message::{InMessage, MessageConsumer, OutMessage, RegisterMessage};
 use crate::utils::write_msg;
 use buffered_reader::BufferedReader;
 use std::collections::HashMap;
@@ -8,7 +8,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::{io, thread};
 
-type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Sender<Message>>>>;
+type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Sender<InMessage>>>>;
 
 pub struct EventBusListener {
     socket: TcpStream,
@@ -32,7 +32,7 @@ impl EventBusListener {
     }
 
     pub fn consumer(&mut self, address: String) -> io::Result<MessageConsumer> {
-        let (tx, rx) = channel::<Message>();
+        let (tx, rx) = channel::<InMessage>();
         let handler = MessageConsumer { msg_queue: rx };
         self.handlers
             .lock()
@@ -40,7 +40,7 @@ impl EventBusListener {
             .insert(address.clone(), tx);
         write_msg(
             &self.socket,
-            &Message::Register(RegisterMessage { address }),
+            &OutMessage::Register(RegisterMessage { address }),
         )?;
         Ok(handler)
     }
@@ -52,7 +52,7 @@ impl EventBusListener {
             .remove(address.as_str());
         write_msg(
             &self.socket,
-            &Message::Unregister(RegisterMessage { address }),
+            &OutMessage::Unregister(RegisterMessage { address }),
         )
         .map(|_| self)
     }
@@ -67,7 +67,7 @@ fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
             if let Ok(read) = socket.data_consume(len as usize) {
                 // event bus protocol is JSON encoded
                 let json = std::str::from_utf8(&read[..len as usize]).unwrap();
-                match serde_json::from_str::<Message>(&json) {
+                match serde_json::from_str::<InMessage>(&json) {
                     Ok(msg) => {
                         if let Some(address) = msg.address() {
                             if let Some(handler) = handlers

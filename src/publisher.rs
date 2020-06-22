@@ -1,4 +1,4 @@
-use crate::message::{FullMessage, Message, SendMessage};
+use crate::message::{FullMessage, OutMessage, SendMessage};
 use crate::utils::write_msg;
 use std::io;
 use std::net::TcpStream;
@@ -15,14 +15,14 @@ impl EventBusPublisher {
     }
 
     pub fn send(&mut self, msg: SendMessage) -> io::Result<&mut Self> {
-        write_msg(&self.socket, &Message::Send(msg)).map(|_| self)
+        write_msg(&self.socket, &OutMessage::Send(msg)).map(|_| self)
     }
 
     pub fn publish(&mut self, msg: FullMessage) -> io::Result<&mut Self> {
-        write_msg(&self.socket, &Message::Publish(msg)).map(|_| self)
+        write_msg(&self.socket, &OutMessage::Publish(msg)).map(|_| self)
     }
 
     pub fn ping(&mut self) -> io::Result<&mut Self> {
-        write_msg(&self.socket, &Message::Ping).map(|_| self)
+        write_msg(&self.socket, &OutMessage::Ping).map(|_| self)
     }
 }

@@ -23,7 +23,7 @@ pub fn eventbus<A: ToSocketAddrs>(address: A) -> io::Result<(EventBusPublisher, 
 #[cfg(test)]
 mod tests {
     use crate::eventbus;
-    use crate::message::{FullMessage, Message, SendMessage};
+    use crate::message::{FullMessage, InMessage, SendMessage};
     use serde_json::json;
 
     /// These are integration test (should be moved to another cfg?)
@@ -36,7 +36,7 @@ mod tests {
         let mut received_msgs = Vec::new();
         while received_msgs.len() < 3 {
             if let Some(msg) = consumer.next() {
-                if let Message::Message(fm) = msg {
+                if let InMessage::Message(fm) = msg {
                     println!("From user code, message is: {:?}", fm);
                     assert!(received_msgs
                         .iter()
@@ -69,7 +69,7 @@ mod tests {
         let mut received_msgs = 0;
         while received_msgs == 0 {
             if let Some(msg) = consumer.next() {
-                if let Message::Message(fm) = msg {
+                if let InMessage::Message(fm) = msg {
                     assert_eq!(reply_address, fm.address);
                     assert_eq!(expected_payload, fm.body.unwrap());
                     received_msgs += 1;
