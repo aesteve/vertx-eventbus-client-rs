@@ -7,7 +7,6 @@ use std::net::TcpStream;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use std::{io, thread};
 
 type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Sender<Result<InMessage, Error>>>>>;
@@ -63,7 +62,6 @@ impl EventBusListener {
 fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
     let mut socket = buffered_reader::Generic::new(&read_stream, Some(4096));
     loop {
-        thread::sleep(Duration::from_millis(100));
         // first, read the 4 bytes indicating message length: `len`
         match socket.read_be_u32() {
             Ok(len) =>
