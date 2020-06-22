@@ -47,11 +47,6 @@ impl InMessage {
         }
     }
 }
-/*
-           Self::Send(sent) => Some(sent.address.clone()),
-           Self::Publish(published) => Some(published.address.clone()),
-
-*/
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FullMessage {
