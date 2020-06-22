@@ -1,14 +1,15 @@
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 
 pub struct MessageConsumer {
-    pub(crate) msg_queue: Receiver<InMessage>,
+    pub(crate) msg_queue: Receiver<Result<InMessage, Error>>,
 }
 
 impl Iterator for MessageConsumer {
-    type Item = InMessage;
+    type Item = Result<InMessage, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.msg_queue.try_recv().ok()

@@ -1,3 +1,4 @@
+use crate::error::Error;
 use crate::message::{InMessage, MessageConsumer, OutMessage, RegisterMessage};
 use crate::utils::write_msg;
 use buffered_reader::BufferedReader;
@@ -6,9 +7,10 @@ use std::net::TcpStream;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use std::{io, thread};
 
-type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Sender<InMessage>>>>;
+type MessageHandlersByAddress = Arc<Mutex<HashMap<String, Sender<Result<InMessage, Error>>>>>;
 
 pub struct EventBusListener {
     socket: TcpStream,
@@ -32,7 +34,7 @@ impl EventBusListener {
     }
 
     pub fn consumer(&mut self, address: String) -> io::Result<MessageConsumer> {
-        let (tx, rx) = channel::<InMessage>();
+        let (tx, rx) = channel::<Result<InMessage, Error>>();
         let handler = MessageConsumer { msg_queue: rx };
         self.handlers
             .lock()
@@ -61,8 +63,10 @@ impl EventBusListener {
 fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
     let mut socket = buffered_reader::Generic::new(&read_stream, Some(4096));
     loop {
+        thread::sleep(Duration::from_millis(100));
         // first, read the 4 bytes indicating message length: `len`
-        if let Ok(len) = socket.read_be_u32() {
+        match socket.read_be_u32() {
+            Ok(len) =>
             // then consume `len` bytes of data => it's a whole message
             if let Ok(read) = socket.data_consume(len as usize) {
                 // event bus protocol is JSON encoded
@@ -76,17 +80,28 @@ fn reader_loop(read_stream: TcpStream, handlers: MessageHandlersByAddress) {
                                 .get(address.as_str())
                             {
                                 handler
-                                    .send(msg)
+                                    .send(Ok(msg))
                                     .expect("Could not notify a new message has been received");
                             }
                         }
                     }
-                    Err(err) => println!(
-                        "Invalid JSON received from EventBus: {}. Error: {:?}",
-                        json, err
-                    ),
+                    Err(err) => {
+                        println!(
+                            "Invalid JSON received from EventBus: {}. Error: {:?}",
+                            json, err
+                        );
+                    }
                 }
-            }
+            },
+            Err(e) => match e.kind() {
+                std::io::ErrorKind::WouldBlock => {}, // transient failure, not to be propagated to the end-user
+                _ =>
+                for (_, handler) in handlers.lock().expect("Could retrieve message handlers").iter() {
+                    if handler.send(Err(Error::Io)).is_err() {
+                        println!("WARN: could not notify message handlers of an IO error {:?}", e)
+                    }
+                }
+            },
         }
     }
 }

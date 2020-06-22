@@ -1,4 +1,5 @@
 use std::io;
+mod error;
 mod listener;
 mod message;
 mod publisher;
@@ -36,7 +37,7 @@ mod tests {
         let mut received_msgs = Vec::new();
         while received_msgs.len() < 3 {
             if let Some(msg) = consumer.next() {
-                if let InMessage::Message(fm) = msg {
+                if let Ok(InMessage::Message(fm)) = msg {
                     println!("From user code, message is: {:?}", fm);
                     assert!(received_msgs
                         .iter()
@@ -69,7 +70,7 @@ mod tests {
         let mut received_msgs = 0;
         while received_msgs == 0 {
             if let Some(msg) = consumer.next() {
-                if let InMessage::Message(fm) = msg {
+                if let Ok(InMessage::Message(fm)) = msg {
                     assert_eq!(reply_address, fm.address);
                     assert_eq!(expected_payload, fm.body.unwrap());
                     received_msgs += 1;
