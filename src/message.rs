@@ -1,14 +1,17 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::io::ErrorKind;
 use std::sync::mpsc::Receiver;
 
-pub struct MessageConsumer {
-    pub(crate) msg_queue: Receiver<InMessage>,
+pub(crate) type UserMessage<T> = Result<T, ErrorKind>;
+
+pub struct MessageConsumer<T> {
+    pub(crate) msg_queue: Receiver<UserMessage<T>>,
 }
 
-impl Iterator for MessageConsumer {
-    type Item = InMessage;
+impl<T> Iterator for MessageConsumer<T> {
+    type Item = UserMessage<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.msg_queue.try_recv().ok()
@@ -18,11 +21,11 @@ impl Iterator for MessageConsumer {
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 #[serde(tag = "type")]
-pub enum InMessage {
+pub(crate) enum InMessage {
     Pong,
     // user, incoming messages
     Err(ErrorMessage),
-    Message(FullMessage),
+    Message(Message),
 }
 
 #[derive(Debug, Serialize, PartialEq)]
@@ -36,20 +39,11 @@ pub enum OutMessage {
     Unregister(RegisterMessage),
     // user, outgoing message
     Send(SendMessage),
-    Publish(FullMessage),
-}
-
-impl InMessage {
-    pub(crate) fn address(&self) -> Option<String> {
-        match self {
-            Self::Message(msg) => Some(msg.address.clone()),
-            _ => None,
-        }
-    }
+    Publish(Message),
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct FullMessage {
+pub struct Message {
     pub(crate) address: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) body: Option<Value>,
@@ -81,7 +75,7 @@ pub struct RegisterMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::message::{FullMessage, InMessage, OutMessage, SendMessage};
+    use crate::message::{InMessage, Message, OutMessage, SendMessage};
     use serde_json::json;
 
     const JSON_PING: &str = r#"{"type":"ping"}"#;
@@ -97,7 +91,7 @@ mod tests {
 
         match serde_json::from_str(JSON_RECEIVED).unwrap() {
             InMessage::Message(msg) => assert_eq!(
-                FullMessage {
+                Message {
                     address: "the-address".to_string(),
                     body: Some(json!({})),
                     headers: None
