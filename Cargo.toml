@@ -11,7 +11,7 @@ authors = ["aesteve <arnaud.esteve@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
 readme = "README.md"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+exclude = ["testutils/"]
 
 [dependencies]
 serde = { version = "1.0.112", features = ["derive"] }
