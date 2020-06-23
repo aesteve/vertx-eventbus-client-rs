@@ -1,9 +1,16 @@
 [package]
 name = "vertx-eventbus-bridge"
-version = "0.1.0"
-authors = ["aesteve <arnaud.esteve@decathlon.com>"]
+description = "Rust client enabling communication with Vert.x Event Bus over TCP"
+keywords = ["vertx", "eventbus", "tcp", "bridge"]
+categories = ["api-bindings", "network-programming"]
+version = "0.0.1"
+repository = "https://github.com/aesteve/vertx-eventbus-client-rs"
+homepage = "https://github.com/aesteve/vertx-eventbus-client-rs"
+documentation = "https://github.com/aesteve/vertx-eventbus-client-rs"
+authors = ["aesteve <arnaud.esteve@gmail.com>"]
 edition = "2018"
-
+license = "Apache-2.0"
+readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
