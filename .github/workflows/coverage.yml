@@ -1,5 +1,6 @@
-on: [push]
+# On a different job since using nightly
 name: Code Coverage
+on: push
 jobs:
   coverage:
     runs-on: ubuntu-latest

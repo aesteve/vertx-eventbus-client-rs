@@ -1,11 +1,11 @@
 # Always run clippy check on every branch push / PR / master
-name: Clippy check
+name: Continuous Integration
 on: push
 jobs:
-  clippy_check:
+  ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -15,3 +15,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-targets --all-features -- -D warnings
+      - run: cargo test
