@@ -1,5 +1,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Crates.io Version](https://img.shields.io/crates/v/vertx-eventbus-bridge.svg)](https://crates.io/crates/vertx-eventbus-bridge)
+[![codecov](https://codecov.io/gh/aesteve/vertx-eventbus-client-rs/branch/master/graph/badge.svg)](https://codecov.io/gh/aesteve/vertx-eventbus-client-rs)
+
+
 
 ## Vert.x TCP EventBus client for Rust
 
