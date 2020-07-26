@@ -25,15 +25,23 @@ mod tests {
     use crate::eventbus;
     use crate::message::{Message, SendMessage};
     use serde_json::json;
+    use testcontainers::images::generic::{GenericImage, WaitFor};
+    use testcontainers::*;
 
-    const TCP_BRIDGE: &str = "127.0.0.1:7542";
+    fn mock_eventbus_server() -> GenericImage {
+        GenericImage::new("aesteve/tests:mock-eventbus-server")
+            .with_wait_for(WaitFor::message_on_stdout("TCP bridge connected"))
+    }
 
-    /// These are integration test (should be moved to another cfg?)
-    ///     to avoid the "observator bias" (testing our understanding of the protocol, rather than the real protocol)
-    /// For them to work fine, one must first run ` java -jar testutils/vertx-eventbusbridge-test-1.0-SNAPSHOT-all.jar`
     #[test]
     fn pub_sub_pattern() {
-        let (_, mut listener) = eventbus(TCP_BRIDGE).expect("Event bus creation must not fail");
+        let docker = clients::Cli::default();
+        let node = docker.run(mock_eventbus_server());
+        let host_port = node
+            .get_host_port(7542)
+            .expect("Mock event bus server implementation needs to be up before running tests");
+        let (_, mut listener) =
+            eventbus(format!("localhost:{}", host_port)).expect("Event bus creation must not fail");
         let mut consumer = listener.consumer("out-address".to_string()).unwrap();
         let mut received_msgs = Vec::new();
         while received_msgs.len() < 3 {
@@ -52,8 +60,13 @@ mod tests {
 
     #[test]
     fn send_reply_pattern() {
+        let docker = clients::Cli::default();
+        let node = docker.run(mock_eventbus_server());
+        let host_port = node
+            .get_host_port(7542)
+            .expect("Mock event bus server implementation needs to be up before running tests");
         let (mut publisher, mut listener) =
-            eventbus(TCP_BRIDGE).expect("Event bus creation must not fail");
+            eventbus(format!("localhost:{}", host_port)).expect("Event bus creation must not fail");
         let reply_address = "the-reply-address";
         let mut consumer = listener.consumer(reply_address.to_string()).unwrap();
         let payload = json!({"test": "value"});
@@ -87,7 +100,13 @@ mod tests {
 
     #[test]
     fn should_be_notified_of_errors() {
-        let (_, mut listener) = eventbus(TCP_BRIDGE).expect("Event bus creation must not fail");
+        let docker = clients::Cli::default();
+        let node = docker.run(mock_eventbus_server());
+        let host_port = node
+            .get_host_port(7542)
+            .expect("Mock event bus server implementation needs to be up before running tests");
+        let (_, mut listener) =
+            eventbus(format!("localhost:{}", host_port)).expect("Event bus creation must not fail");
         let mut error_listener = listener
             .errors()
             .expect("Can ask for an iterator over error messages");
