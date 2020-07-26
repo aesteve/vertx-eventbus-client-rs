@@ -93,10 +93,7 @@ fn reader_loop(
                 std::io::ErrorKind::WouldBlock => {}, // transient failure, not to be propagated to the end-user
                 kind =>
                 for (_, handler) in handlers.lock().expect("Could retrieve message handlers to notify of an I/O error").iter() {
-                    println!("WARN: an error occurred while reading from the TCP socket {:?}", e);
-                    if handler.send(Err(kind)).is_err() {
-                        println!("WARN: could not notify message handlers of an IO error {:?}", e)
-                    }
+                    if handler.send(Err(kind)).is_err() {}
                 }
             },
         }
