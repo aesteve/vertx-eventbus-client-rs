@@ -1,3 +1,6 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Crates.io Version](https://img.shields.io/crates/v/vertx-eventbus-bridge.svg)](https://crates.io/crates/vertx-eventbus-bridge)
+
 ## Vert.x TCP EventBus client for Rust
 
 
