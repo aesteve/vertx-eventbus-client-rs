@@ -131,6 +131,36 @@ mod tests {
     }
 
     #[test]
+    fn test_errors() {
+        let docker = clients::Cli::default();
+        let node = docker.run(mock_eventbus_server());
+        let host_port = node
+            .get_host_port(7542)
+            .expect("Mock event bus server implementation needs to be up before running tests");
+        let addr = format!("localhost:{}", host_port);
+        println!("Mock server running on {}", addr);
+        let (mut publisher, mut listener) =
+            eventbus(addr).expect("Event bus creation must not fail");
+        let payload = json!({"test": "value"});
+        publisher
+            .send(SendMessage {
+                address: "error-address".to_string(),
+                reply_address: Some("the-reply-address".to_string()),
+                body: Some(payload),
+                headers: None,
+            })
+            .expect("Publishing a message to the event bus must work fine");
+        let mut errors_received = 0;
+        let mut errors = listener.errors().expect("Can listen to errors");
+        while errors_received == 0 {
+            if let Some(Ok(error_msg)) = errors.next() {
+                assert_eq!(error_msg.message, "FORBIDDEN".to_string(),);
+                errors_received += 1;
+            }
+        }
+    }
+
+    #[test]
     fn connect_to_an_unexisting_address_should_fail() {
         let eb = eventbus("127.0.0.1::1111");
         assert!(eb.is_err());
