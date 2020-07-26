@@ -34,14 +34,30 @@ mod tests {
     }
 
     #[test]
-    fn pub_sub_pattern() {
+    fn test_ping() {
         let docker = clients::Cli::default();
         let node = docker.run(mock_eventbus_server());
         let host_port = node
             .get_host_port(7542)
             .expect("Mock event bus server implementation needs to be up before running tests");
-        let (_, mut listener) =
-            eventbus(format!("localhost:{}", host_port)).expect("Event bus creation must not fail");
+        let addr = format!("localhost:{}", host_port);
+        println!("Mock server running on {}", addr);
+        let (mut publisher, _) = eventbus(addr).expect("Event bus creation must not fail");
+        publisher
+            .ping()
+            .expect("Should be able to send ping to the server");
+    }
+
+    #[test]
+    fn consumer_test() {
+        let docker = clients::Cli::default();
+        let node = docker.run(mock_eventbus_server());
+        let host_port = node
+            .get_host_port(7542)
+            .expect("Mock event bus server implementation needs to be up before running tests");
+        let addr = format!("localhost:{}", host_port);
+        println!("Mock server running on {}", addr);
+        let (_, mut listener) = eventbus(addr).expect("Event bus creation must not fail");
         let mut consumer = listener.consumer("out-address".to_string()).unwrap();
         let mut received_msgs = Vec::new();
         while received_msgs.len() < 3 {
@@ -65,8 +81,10 @@ mod tests {
         let host_port = node
             .get_host_port(7542)
             .expect("Mock event bus server implementation needs to be up before running tests");
+        let addr = format!("localhost:{}", host_port);
+        println!("Mock server running on {}", addr);
         let (mut publisher, mut listener) =
-            eventbus(format!("localhost:{}", host_port)).expect("Event bus creation must not fail");
+            eventbus(addr).expect("Event bus creation must not fail");
         let reply_address = "the-reply-address";
         let mut consumer = listener.consumer(reply_address.to_string()).unwrap();
         let payload = json!({"test": "value"});
@@ -93,6 +111,26 @@ mod tests {
     }
 
     #[test]
+    fn pub_sub_pattern() {
+        let docker = clients::Cli::default();
+        let node = docker.run(mock_eventbus_server());
+        let host_port = node
+            .get_host_port(7542)
+            .expect("Mock event bus server implementation needs to be up before running tests");
+        let addr = format!("localhost:{}", host_port);
+        println!("Mock server running on {}", addr);
+        let (mut publisher, _) = eventbus(addr).expect("Event bus creation must not fail");
+        let payload = json!({"test": "value"});
+        publisher
+            .publish(Message {
+                address: "in-address".to_string(),
+                body: Some(payload),
+                headers: None,
+            })
+            .expect("Publishing a message to the event bus must work fine");
+    }
+
+    #[test]
     fn connect_to_an_unexisting_address_should_fail() {
         let eb = eventbus("127.0.0.1::1111");
         assert!(eb.is_err());
@@ -105,8 +143,9 @@ mod tests {
         let host_port = node
             .get_host_port(7542)
             .expect("Mock event bus server implementation needs to be up before running tests");
-        let (_, mut listener) =
-            eventbus(format!("localhost:{}", host_port)).expect("Event bus creation must not fail");
+        let addr = format!("localhost:{}", host_port);
+        println!("Mock server running on {}", addr);
+        let (_, mut listener) = eventbus(addr).expect("Event bus creation must not fail");
         let mut error_listener = listener
             .errors()
             .expect("Can ask for an iterator over error messages");
