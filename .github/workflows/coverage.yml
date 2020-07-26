@@ -1,7 +1,7 @@
 on: [push]
 name: Code Coverage
 jobs:
-  lint:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -21,4 +21,5 @@ jobs:
       - name: Codecov upload
         uses: codecov/codecov-action@v1
         with:
-          file: ${{ steps.coverage.outputs.report }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ${{ steps.coverage.outputs.report }}.info
