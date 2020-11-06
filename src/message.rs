@@ -2,21 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::io::ErrorKind;
-use std::sync::mpsc::Receiver;
 
 pub(crate) type UserMessage<T> = Result<T, ErrorKind>;
-
-pub struct MessageConsumer<T> {
-    pub(crate) msg_queue: Receiver<UserMessage<T>>,
-}
-
-impl<T> Iterator for MessageConsumer<T> {
-    type Item = UserMessage<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.msg_queue.try_recv().ok()
-    }
-}
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]

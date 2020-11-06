@@ -1,6 +1,5 @@
-use crate::message::{
-    ErrorMessage, InMessage, Message, MessageConsumer, OutMessage, RegisterMessage, UserMessage,
-};
+use crate::message::{ErrorMessage, InMessage, Message, OutMessage, RegisterMessage, UserMessage};
+use crate::sync::message::MessageConsumer;
 use crate::utils::write_msg;
 use buffered_reader::BufferedReader;
 use std::collections::HashMap;
