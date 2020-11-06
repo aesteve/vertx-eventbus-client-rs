@@ -11,7 +11,7 @@ pub struct EventBusPublisher {
 }
 
 impl EventBusPublisher {
-    pub(crate) fn new(socket: TcpStream) -> io::Result<Self> {
+    pub fn new(socket: TcpStream) -> io::Result<Self> {
         let (tx, rx) = channel::<()>();
         let mut created = EventBusPublisher { socket, tx };
         created.send_heartbeat_periodically(rx)?;

@@ -20,7 +20,7 @@ pub struct EventBusListener {
 }
 
 impl EventBusListener {
-    pub(crate) fn new(socket: TcpStream) -> io::Result<Self> {
+    pub fn new(socket: TcpStream) -> io::Result<Self> {
         let msg_dispatcher = socket.try_clone()?;
         let error_notifier = Arc::new(Mutex::new(None));
         let notifier = error_notifier.clone();

@@ -4,10 +4,10 @@ use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::sync::mpsc::Receiver;
 
-pub(crate) type UserMessage<T> = Result<T, ErrorKind>;
+pub type UserMessage<T> = Result<T, ErrorKind>;
 
 pub struct MessageConsumer<T> {
-    pub(crate) msg_queue: Receiver<UserMessage<T>>,
+    pub msg_queue: Receiver<UserMessage<T>>,
 }
 
 impl<T> Iterator for MessageConsumer<T> {
@@ -21,7 +21,7 @@ impl<T> Iterator for MessageConsumer<T> {
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 #[serde(tag = "type")]
-pub(crate) enum InMessage {
+pub enum InMessage {
     Pong,
     // user, incoming messages
     Err(ErrorMessage),
@@ -44,33 +44,33 @@ pub enum OutMessage {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Message {
-    pub(crate) address: String,
+    pub address: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) body: Option<Value>,
+    pub body: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) headers: Option<HashMap<String, String>>,
+    pub headers: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ErrorMessage {
-    pub(crate) message: String,
+    pub message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SendMessage {
-    pub(crate) address: String,
+    pub address: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) reply_address: Option<String>,
+    pub reply_address: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) body: Option<Value>,
+    pub body: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) headers: Option<HashMap<String, String>>,
+    pub headers: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct RegisterMessage {
-    pub(crate) address: String,
+    pub address: String,
 }
 
 #[cfg(test)]
